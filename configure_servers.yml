@@ -1,0 +1,47 @@
+---
+- name: Configure servers according to their groups
+  hosts: all
+  tasks:
+    - name: Set the hostname
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+        use: systemd
+      become: true
+
+    - name: Register server with Red Hat
+      community.general.redhat_subscription:
+        state: present
+        username: joe_user
+        password: somepass
+      become: true
+
+    - name: Install database software on DB servers
+      ansible.builtin.dnf:
+        name: mariadb-server
+        state: present
+      become: true
+      when: inventory_hostname in groups["database"]
+
+    - name: Enable database service on DB servers
+      ansible.builtin.systemd:
+        name: mariadb
+        state: started
+        enabled: true
+      become: true
+      when: inventory_hostname in groups["database"]
+
+    - name: Install web server software on apache servers
+      ansible.builtin.dnf:
+        name: httpd
+        state: present
+      become: true
+      when: inventory_hostname in groups["apache"]
+
+    - name: Enable web service on apache servers
+      ansible.builtin.systemd:
+        name: httpd
+        state: started
+        enabled: true
+      become: true
+      when: inventory_hostname in groups["apache"]
+...
